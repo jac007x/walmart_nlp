@@ -1,0 +1,28 @@
+paths:
+  theme_dict_core:   dicts/theme_dict_core.json
+  theme_dict_patch:  dicts/theme_dict_patch.yaml
+  flag_dict_core:    dicts/flag_dict_core.json
+  flag_dict_ext:     dicts/flag_dict_ext.json
+  matcher_cache:     models/matcher_cache.pkl
+
+batch_sizes:
+  transformer: 128
+  gpt: 150
+
+embedding_fallback:
+  enabled: true
+  model: all-MiniLM-L6-v2
+  threshold: 0.70      # cosine similarity
+
+gpt:
+  model: gpt-4o-mini
+  concurrency: 4
+  token_cap: 300_000
+
+logging:
+  file: pipeline.log
+
+notifications:
+  slack_webhook_url: ""   # fill if you want Slack alerts
+
+drift_threshold: 0.20
