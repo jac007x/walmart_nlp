@@ -1,0 +1,15 @@
+pandas>=2.2
+numpy>=1.26
+tqdm>=4.66
+spacy>=3.7
+sentence-transformers>=2.5
+torch>=2.2
+vaderSentiment>=3.3.2
+transformers>=4.41
+scikit-learn>=1.5
+openai>=1.25
+swifter>=1.4
+pyyaml>=6.0
+pandera>=0.18
+fastapi          # optional: REST endpoint
+uvicorn
