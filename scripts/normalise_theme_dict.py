@@ -31,6 +31,9 @@ def main(src, dst):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--in",  required=True)
-    ap.add_argument("--out", required=True)
-    main(ap.parse_args().in, ap.parse_args().out)
+    ap.add_argument("--src", required=True, dest="src",
+                    help="path to your raw JSON (e.g. dicts/walmart_theme_dict_original.json)")
+    ap.add_argument("--dst", required=True, dest="dst",
+                    help="path to write normalized JSON (e.g. dicts/theme_dict_core.json)")
+    args = ap.parse_args()
+    main(args.src, args.dst)
