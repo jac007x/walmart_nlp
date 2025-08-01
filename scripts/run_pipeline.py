@@ -122,7 +122,7 @@ def embed_fallback(txt, need):
 # 6. Pipeline entrypoint
 def run(csv_path):
     df = pd.read_csv(csv_path, low_memory=False)
-    df["CleanComment"] = df["Comment"].fillna("").str.strip()
+    df["CleanComment"] = df["OriginalComment"].fillna("").str.strip()
 
     # Lineage
     df["Row_SHA1"] = df["CleanComment"].apply(
