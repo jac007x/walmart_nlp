@@ -1,0 +1,44 @@
+{
+  "CostOfLiving_Flag": [
+    "cost of living", "can't afford", "rent", "inflation", "groceries", "wages not keeping up", "gas prices", "transportation", "prices", "expensive", "paycheck", "salary"
+  ],
+  "Union_Flag": [
+    "unionize", "starting a union", "collective bargaining", "strike", "ufcw", "labor board", "right to work", "organize a union", "union representation", "join a union"
+  ],
+  "Discrimination_Flag": [
+    "discrimination", "discriminate", "bias", "racism", "ageism", "sexism", "unfair treatment", "unequal pay", "glass ceiling", "favoritism"
+  ],
+  "DEI_Flag": [
+    "diversity", "equity", "inclusion", "lgbtq", "gender identity", "race", "racial", "affirmative action", "pronouns", "equal opportunity", "inclusive"
+  ],
+  "Sedgwick_LOA_Flag": [
+    "sedgwick", "fmla", "maternity leave", "medical leave", "family leave", "parental leave", "paternity leave"
+  ],
+  "Accessibility_Flag": [
+    "ada", "disability", "disabled", "wheelchair", "hearing impaired", "stool", "accessible", "mobility", "accommodation", "vision impaired", "assistive device"
+  ],
+  "Harassment_Flag": [
+    "harassment", "hostile", "bullying", "sexual harassment", "inappropriate", "intimidation"
+  ],
+  "Retaliation_Flag": [
+    "retaliation", "retaliate", "punished for", "got written up after", "reprisal"
+  ],
+  "Violence_Flag": [
+    "violence", "threatened", "assault", "fighting", "physical altercation", "unsafe", "active shooter"
+  ],
+  "Whistleblower_Flag": [
+    "reported", "blew the whistle", "osha", "told ethics", "anonymous tip", "whistleblower", "open door", "ethics hotline"
+  ],
+  "Overtime_Flag": [
+    "forced overtime", "mandatory overtime", "unpaid hours", "off the clock", "no break", "skip break", "work on lunch"
+  ],
+  "Leave_Flag": [
+    "unpaid leave", "parental leave", "maternity leave", "leave denied", "leave not approved", "leave retaliation"
+  ],
+  "MentalHealth_Flag": [
+    "anxiety", "stress", "depression", "mental health", "overwhelmed", "panic attack"
+  ],
+  "Violence_Prevention_Flag": [
+    "active shooter", "code black", "code white", "code adam", "code brown", "emergency drills", "threat protocol", "evacuation", "security concern"
+  ]
+}
