@@ -23,9 +23,9 @@ CFG = yaml.safe_load(open("config.yaml"))
 
 # ----------------------------------------------------------------------- #
 # 1. Load dictionaries
-theme_dict = json.load(open(CFG["paths"]["walmart_theme_dict"]))
-flag_core  = json.load(open(CFG["paths"]["walmart_flag_dict"]))
-flag_ext   = json.load(open(CFG["paths"]["theme_dict_patch"]))
+theme_dict = json.load(open(CFG["paths"]["walmart_theme_dict.json"]))
+flag_core  = json.load(open(CFG["paths"]["walmart_flag_dict.json"]))
+flag_ext   = json.load(open(CFG["paths"]["theme_dict_patch.json"]))
 
 # ----------------------------------------------------------------------- #
 # 2. Initialize spaCy and rebuild matcher in this Vocab
