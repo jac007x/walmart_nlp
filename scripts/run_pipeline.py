@@ -72,22 +72,21 @@ def match_themes(txt):
     return hits
 
 # ----------------------------------------------------------------------- #
-# 4. Embedding fallback (optional)
+# 4. Embedding-assisted fallback (optional)
 if CFG["embedding_fallback"]["enabled"]:
     embed_model = SentenceTransformer(CFG["embedding_fallback"]["model"])
-    theme_vecs  = {}
-    for theme, cfg in theme_dict.items():
-        exemplars = cfg["keywords"][:5]
-        theme_vecs[theme] = embed_model.encode(exemplars, convert_to_tensor=True).mean(0)
+    theme_vecs = {}
 
-def embed_fallback(txt, need):
-    if not need:
-        return []
-    vec = embed_model.encode([txt], convert_to_tensor=True)
-    sims = util.cos_sim(vec, torch.stack(list(theme_vecs.values())))[0]
-    th   = CFG["embedding_fallback"]["threshold"]
-    idxs = (sims >= th).nonzero(as_tuple=True)[0]
-    return [list(theme_vecs.keys())[i] for i in idxs]
+    # Build one vector per theme by averaging up to 5 keywords
+    for theme_name, theme_cfg in theme_dict.items():
+        # Safely grab the first five keywords (or empty list)
+        exemplars = theme_cfg.get("keywords", [])[:5]
+        if not exemplars:
+            continue
+
+        # Encode and average
+        emb = embed_model.encode(exemplars, convert_to_tensor=True)
+        theme_vecs[theme_name] = emb.mean(dim=0)
 
 # ----------------------------------------------------------------------- #
 # 5. Main
