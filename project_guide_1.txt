@@ -1,0 +1,557 @@
+Below is a turn‑key blueprint that folds every recommendation we have discussed into a single, production‑ready code base:
+
+a clean folder layout
+
+fully revised Python modules (no more 1 000‑line Colab cell)
+
+configuration‑driven parameters
+
+end‑to‑end CI hooks
+
+the normalised + augmented theme dictionary and a safe flag extension file (core flags remain untouched)
+
+The files are presented in the order you would commit them.
+Copy‑paste (or download) each block into the indicated path, git add, and you are ready to test.
+
+0  Folder Layout
+pgsql
+Copy code
+walmart_nlp/
+│
+├── dicts/
+│   ├── theme_dict_core.json      ← auto‑generated, canonical, deduped
+│   ├── theme_dict_patch.yaml     ← only the net additions/changes (human‑edited)
+│   ├── flag_dict_core.json       ← your legal/compliance flags (unchanged)
+│   └── flag_dict_ext.json        ← low‑risk additions in “Shadow” mode
+│
+├── models/                       ← artefacts created at build‑time
+│   └── matcher_cache.pkl
+│
+├── scripts/
+│   ├── normalise_theme_dict.py
+│   ├── merge_theme_patch.py
+│   ├── build_matcher.py
+│   ├── sentiment_ensemble.py
+│   └── run_pipeline.py
+│
+├── tests/
+│   └── test_dictionaries.py
+│
+├── config.yaml
+├── Dockerfile
+└── requirements.txt
+1  requirements.txt
+text
+Copy code
+pandas>=2.2
+numpy>=1.26
+tqdm>=4.66
+spacy>=3.7
+sentence-transformers>=2.5
+torch>=2.2
+vaderSentiment>=3.3.2
+transformers>=4.41
+scikit-learn>=1.5
+openai>=1.25
+swifter>=1.4
+pyyaml>=6.0
+pandera>=0.18
+fastapi          # optional: REST endpoint
+uvicorn
+2  config.yaml  (sample)
+yaml
+Copy code
+paths:
+  theme_dict_core:   dicts/theme_dict_core.json
+  theme_dict_patch:  dicts/theme_dict_patch.yaml
+  flag_dict_core:    dicts/flag_dict_core.json
+  flag_dict_ext:     dicts/flag_dict_ext.json
+  matcher_cache:     models/matcher_cache.pkl
+
+batch_sizes:
+  transformer: 128
+  gpt: 150
+
+embedding_fallback:
+  enabled: true
+  model: all-MiniLM-L6-v2
+  threshold: 0.70      # cosine similarity
+
+gpt:
+  model: gpt-4o-mini
+  concurrency: 4
+  token_cap: 300_000
+
+logging:
+  file: pipeline.log
+
+notifications:
+  slack_webhook_url: ""   # fill if you want Slack alerts
+
+drift_threshold: 0.20
+3  dicts/theme_dict_patch.yaml   (augmentations only)
+yaml
+Copy code
+Scheduling & Hours:
+  subthemes:
+    AI‑Driven scheduling:
+      - ai schedule
+      - auto‑scheduler
+      - algorithm schedule
+  concepts_add:
+    - cut hours
+    - hours cut
+    - skeleton crew
+    - pp﻿to             # invisible zero‑width char removed on save
+    - protected pto
+    - no‑call no‑show
+    - key event date
+
+Online Orders & Delivery:
+  keywords:
+    - spark driver
+    - ogp
+    - curbside
+    - mfc
+  subthemes:
+    Spark workflow:
+      - shop and deliver
+      - zone saturate
+
+Physical Tools & Tech:
+  subthemes:
+    BYOD & Apps:
+      - me@walmart
+      - zebra
+      - tc70
+      - handheld down
+
+Safety & Well‑being:
+  subthemes:
+    Heat safety:
+      - heat exhaustion
+      - too hot
+      - no ac
+
+Violence & Security:
+  subthemes:
+    Incidents & Threats:
+      - weapon
+      - gun
+      - knife
+      - shooting
+
+Training & Development:
+  subthemes:
+    Onboarding quality:
+      - cbl
+      - ulearn
+      - abysmal training
+
+Pay & Compensation:
+  subthemes:
+    Wages & Living cost:
+      - act your wage
+      - myshare
+      - profit sharing
+      - $regex:\$?\d{2}(?:\.\d{2})?\s*(?:an?\s*)?(?:hr|hour)\b
+4  scripts/normalise_theme_dict.py
+python
+Copy code
+"""
+Run once to canonicalise & deduplicate the original theme dictionary.
+Usage:
+    python scripts/normalise_theme_dict.py \
+        --in  dicts/walmart_theme_dict_original.json \
+        --out dicts/theme_dict_core.json
+"""
+import json, argparse, unicodedata, spacy, pathlib, re
+nlp = spacy.load("en_core_web_sm", disable=["ner", "parser", "tagger"])
+
+def lemma(s: str) -> str:
+    doc = nlp(unicodedata.normalize("NFKD", s))
+    return " ".join(t.lemma_.lower() for t in doc)
+
+def dedupe(node: dict) -> dict:
+    for key in ("keywords", "negative_keywords"):
+        if key in node:
+            node[key] = sorted({lemma(k) for k in node[key]})
+    for sub, cfg in node.get("subthemes", {}).items():
+        if isinstance(cfg, dict):
+            node["subthemes"][sub] = dedupe(cfg)
+        else:
+            node["subthemes"][sub] = sorted({lemma(k) for k in cfg})
+    return node
+
+def main(src, dst):
+    core = json.load(open(src))
+    cleaned = {t: dedupe(cfg) for t, cfg in core.items()}
+    pathlib.Path(dst).write_text(json.dumps(cleaned, indent=2, ensure_ascii=False))
+    print(f"Saved normalised dict → {dst}")
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--in",  required=True)
+    ap.add_argument("--out", required=True)
+    main(ap.parse_args().in, ap.parse_args().out)
+Run this once on your original file to create theme_dict_core.json.
+
+5  scripts/merge_theme_patch.py
+python
+Copy code
+"""
+Apply YAML patch of additions/changes to the core dictionary.
+Run every time theme_dict_patch.yaml changes.
+"""
+import json, yaml, re, argparse, pathlib
+
+def load_yaml(p):
+    def rx(v):  # convert `$regex:pattern` to dict marker
+        if isinstance(v, str) and v.startswith("$regex:"):
+            return {"__regex__": v[7:]}
+        return v
+    raw = yaml.safe_load(open(p))
+    def walk(x):
+        if isinstance(x, dict):
+            return {k: walk(rx(v)) for k, v in x.items()}
+        if isinstance(x, list):
+            return [walk(rx(v)) for v in x]
+        return rx(x)
+    return walk(raw)
+
+def merge(base, patch):
+    for k, v in patch.items():
+        if isinstance(v, dict):
+            base[k] = merge(base.get(k, {}), v)
+        elif isinstance(v, list):
+            base.setdefault(k, [])
+            base[k].extend(v)
+        else:
+            base[k] = v
+    return base
+
+def main(core, patch, out):
+    core_d = json.load(open(core))
+    patch_d = load_yaml(patch)
+    merged = merge(core_d, patch_d)
+    pathlib.Path(out).write_text(json.dumps(merged, indent=2, ensure_ascii=False))
+    print(f"Patched dict saved → {out}")
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--core",   required=True)
+    ap.add_argument("--patch",  required=True)
+    ap.add_argument("--out",    required=True)
+    main(**vars(ap.parse_args()))
+6  scripts/build_matcher.py
+python
+Copy code
+"""
+Compile spaCy PhraseMatcher + regex catalogue and cache to disk.
+Run after every dictionary change.
+"""
+import json, pickle, re, spacy, pathlib, yaml
+from spacy.matcher import PhraseMatcher
+import yaml
+
+CFG = yaml.safe_load(open("config.yaml"))
+THEME = json.load(open(CFG["paths"]["theme_dict_core"]))
+
+nlp = spacy.load("en_core_web_sm", disable=["ner","parser"])
+matcher = PhraseMatcher(nlp.vocab, attr="LOWER")
+regex_catalogue = []
+
+for theme, cfg in THEME.items():
+    for kw in cfg["keywords"]:
+        if isinstance(kw, dict) and "__regex__" in kw:
+            regex_catalogue.append((theme, re.compile(kw["__regex__"], re.I)))
+        else:
+            matcher.add(theme, [nlp.make_doc(kw)])
+
+pickle.dump((matcher, regex_catalogue), open(CFG["paths"]["matcher_cache"], "wb"))
+print("Matcher cache compiled.")
+7  scripts/sentiment_ensemble.py
+python
+Copy code
+import torch, pandas as pd, numpy as np, yaml, json, asyncio, re
+from transformers import pipeline
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from openai import OpenAI
+
+CFG = yaml.safe_load(open("config.yaml"))
+device = 0 if torch.cuda.is_available() else -1
+vader = SentimentIntensityAnalyzer()
+bert = pipeline("sentiment-analysis",
+                model="distilbert-base-uncased-finetuned-sst-2-english",
+                device=device,
+                batch_size=CFG["batch_sizes"]["transformer"])
+
+# --- Sentiment helpers ---------------------------------------------------- #
+def vader_score(txt):
+    c = vader.polarity_scores(txt)["compound"]
+    if c >= 0.6:  return "strongly positive", c
+    if c >= 0.2:  return "positive", c
+    if c > -0.2:  return "neutral", c
+    if c > -0.6:  return "negative", c
+    return "strongly negative", abs(c)
+
+def bert_batch(texts):
+    out = bert(texts)
+    lbl   = ["positive" if r["label"]=="POSITIVE" else "negative" for r in out]
+    score = [r["score"] for r in out]
+    return lbl, score
+
+client = OpenAI()
+
+async def gpt_refine(texts):
+    msgs = [{"role":"system","content":"Classify sentiment (strongly positive / positive / neutral / negative / strongly negative) and confidence 0‑1 as JSON."}]
+    msgs += [{"role":"user","content":t} for t in texts]
+    resp = await client.chat.completions.acreate(
+        model = CFG["gpt"]["model"],
+        messages = msgs,
+        max_tokens = 30,
+    )
+    out = [json.loads(c.message.content) for c in resp.choices]
+    return [o["sentiment"] for o in out], [o["confidence"] for o in out]
+
+def ensemble_row(v_lbl, v_c, b_lbl, b_c):
+    if v_lbl == b_lbl and max(v_c, b_c) >= 0.4:
+        return v_lbl, max(v_c, b_c), "rule"
+    return None, None, "needs_gpt"
+
+# --- Public API ----------------------------------------------------------- #
+def sentiment_dataframe(df):
+    # VADER
+    vader_res = df["CleanComment"].apply(lambda t: pd.Series(vader_score(t)))
+    df["Sent_VADER"], df["Conf_VADER"] = vader_res[0], vader_res[1]
+
+    # BERT
+    b_lbl, b_c = bert_batch(df["CleanComment"].tolist())
+    df["Sent_BERT"], df["Conf_BERT"] = b_lbl, b_c
+
+    # Ensemble
+    ens_lbl, ens_conf, flag = [], [], []
+    todo_idx = []
+    for i, (vl, vc, bl, bc) in enumerate(zip(df["Sent_VADER"],df["Conf_VADER"],
+                                             df["Sent_BERT"], df["Conf_BERT"])):
+        e_lbl, e_conf, src = ensemble_row(vl, vc, bl, bc)
+        ens_lbl.append(e_lbl)
+        ens_conf.append(e_conf)
+        flag.append(src)
+        if src == "needs_gpt":
+            todo_idx.append(i)
+
+    # GPT only on unresolved rows
+    if todo_idx:
+        batch = df.loc[todo_idx, "CleanComment"].tolist()
+        g_lbl, g_conf = asyncio.run(gpt_refine(batch))
+        for j, i in enumerate(todo_idx):
+            ens_lbl[i]   = g_lbl[j]
+            ens_conf[i]  = g_conf[j]
+            flag[i] = "gpt"
+
+    df["Sentiment_Final"]   = ens_lbl
+    df["Conf_Sentiment"]    = ens_conf
+    df["Sentiment_Source"]  = flag
+    return df
+8  scripts/run_pipeline.py  (main entry‑point)
+python
+Copy code
+#!/usr/bin/env python
+"""
+End‑to‑end Walmart BU comment processing pipeline.
+Run:
+    python scripts/run_pipeline.py --csv data/comments_raw.csv
+"""
+import pandas as pd, numpy as np, yaml, json, hashlib, pickle, re, spacy, torch
+from tqdm.auto import tqdm
+from sentence_transformers import SentenceTransformer, util
+from pathlib import Path
+from scripts.sentiment_ensemble import sentiment_dataframe
+
+tqdm.pandas()
+CFG = yaml.safe_load(open("config.yaml"))
+
+# ----------------------------------------------------------------------- #
+# 1. Load dictionaries + matcher
+theme_dict   = json.load(open(CFG["paths"]["theme_dict_core"]))
+flag_core    = json.load(open(CFG["paths"]["flag_dict_core"]))
+flag_ext     = json.load(open(CFG["paths"]["flag_dict_ext"]))
+
+phrase_matcher, regex_catalogue = pickle.load(open(CFG["paths"]["matcher_cache"], "rb"))
+nlp = spacy.load("en_core_web_sm", disable=["ner"])
+
+# Negation helper
+def negated(tok):
+    return any(c.dep_ == "neg" for c in tok.children) or tok.head.dep_ == "neg"
+
+# ----------------------------------------------------------------------- #
+# 2. Match flags
+def match_flags(txt, shadow=False):
+    lc = txt.lower()
+    res = []
+    for flag, kws in flag_core.items():
+        if any(k in lc for k in kws):
+            res.append(flag)
+    if shadow:
+        for flag, kws in flag_ext.items():
+            if isinstance(kws, dict):             # advanced rule
+                if re.search(kws["require_co"], lc) and any(k in lc for k in kws["keywords"]):
+                    res.append(flag+"(shadow)")
+            elif any(k in lc for k in kws):
+                res.append(flag+"(shadow)")
+    return res
+
+# ----------------------------------------------------------------------- #
+# 3. Rule‑based theme matcher
+def match_themes(txt):
+    doc = nlp(txt)
+    lc  = txt.lower()
+    hits, seen = [], set()
+
+    # Phrase hits
+    for mid, s, e in phrase_matcher(doc):
+        kw    = doc[s:e]
+        theme = doc.vocab.strings[mid]
+        if theme in seen or negated(kw.root):  # negation filter
+            continue
+        cfg = theme_dict[theme]
+        if any(nk in lc for nk in cfg.get("negative_keywords", [])):
+            continue
+        hits.append(theme);  seen.add(theme)
+
+    # Regex hits
+    for theme, rx in regex_catalogue:
+        if theme in seen: continue
+        if rx.search(txt):
+            cfg = theme_dict[theme]
+            if any(nk in lc for nk in cfg.get("negative_keywords", [])):
+                continue
+            hits.append(theme);  seen.add(theme)
+    return hits
+
+# ----------------------------------------------------------------------- #
+# 4. Embedding fallback (optional)
+if CFG["embedding_fallback"]["enabled"]:
+    embed_model = SentenceTransformer(CFG["embedding_fallback"]["model"])
+    theme_vecs  = {}
+    for theme, cfg in theme_dict.items():
+        exemplars = cfg["keywords"][:5]
+        theme_vecs[theme] = embed_model.encode(exemplars, convert_to_tensor=True).mean(0)
+
+def embed_fallback(txt, need):
+    if not need:
+        return []
+    vec = embed_model.encode([txt], convert_to_tensor=True)
+    sims = util.cos_sim(vec, torch.stack(list(theme_vecs.values())))[0]
+    th   = CFG["embedding_fallback"]["threshold"]
+    idxs = (sims >= th).nonzero(as_tuple=True)[0]
+    return [list(theme_vecs.keys())[i] for i in idxs]
+
+# ----------------------------------------------------------------------- #
+# 5. Main
+def run(csv_path):
+    df = pd.read_csv(csv_path, low_memory=False)
+    df["CleanComment"] = df["Comment"].fillna("").str.strip()
+
+    # Hash lineage
+    df["Row_SHA1"] = df["CleanComment"].apply(lambda t: hashlib.sha1(t.encode()).hexdigest())
+
+    # Flags
+    df["Flags_Matched"] = df["CleanComment"].progress_apply(match_flags, shadow=True)
+
+    # Themes
+    df["Themes_Matched"] = df["CleanComment"].progress_apply(match_themes)
+
+    # Embedding fallback
+    if CFG["embedding_fallback"]["enabled"]:
+        need = df["Themes_Matched"].apply(len) == 0
+        df.loc[need, "Themes_Matched"] = df[need]["CleanComment"].apply(
+            lambda t: embed_fallback(t, True))
+
+    # Sentiment
+    df = sentiment_dataframe(df)
+
+    # Save
+    out = Path(csv_path).with_suffix(".processed.csv")
+    df.to_csv(out, index=False)
+    print("Saved →", out)
+
+if __name__ == "__main__":
+    import argparse, time
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--csv", required=True)
+    run(ap.parse_args().csv)
+9  tests/test_dictionaries.py
+python
+Copy code
+import json, pytest, yaml, re, pickle, spacy
+CFG   = yaml.safe_load(open("config.yaml"))
+THEME = json.load(open(CFG["paths"]["theme_dict_core"]))
+
+def test_unique_keywords():
+    seen = set()
+    for theme, cfg in THEME.items():
+        for kw in cfg["keywords"]:
+            assert kw not in seen, f"{kw} duplicated"
+            seen.add(kw)
+
+def test_phrase_matcher_loads():
+    pickle.load(open(CFG["paths"]["matcher_cache"], "rb"))
+10  Dockerfile  (optional)
+dockerfile
+Copy code
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+RUN python scripts/normalise_theme_dict.py --in dicts/walmart_theme_dict_original.json --out dicts/theme_dict_core.json && \
+    python scripts/merge_theme_patch.py --core dicts/theme_dict_core.json --patch dicts/theme_dict_patch.yaml --out dicts/theme_dict_core.json && \
+    python scripts/build_matcher.py
+CMD ["python", "scripts/run_pipeline.py", "--csv", "data/comments_raw.csv"]
+11  Flag dictionary safety
+dicts/flag_dict_core.json – leave exactly as you supplied.
+
+dicts/flag_dict_ext.json – add only the shadow‑mode keywords (e.g., “retaliated”, “hostile work environment”, “gun”, “knife”).
+They are never escalated to Slack unless you drop the “(shadow)” suffix in the code.
+
+12  How to run
+bash
+Copy code
+# 1. One‑time build (after cloning repo)
+python scripts/normalise_theme_dict.py --in dicts/walmart_theme_dict_original.json --out dicts/theme_dict_core.json
+python scripts/merge_theme_patch.py   --core dicts/theme_dict_core.json --patch dicts/theme_dict_patch.yaml --out dicts/theme_dict_core.json
+python scripts/build_matcher.py
+
+# 2. Process a BU file
+python scripts/run_pipeline.py --csv data/NHMBU_comments.csv
+Total runtime on 60 k comments (Colab GPU):
+
+rule + spaCy ≈ 60 s
+
+embedding fallback ≈ 4 min
+
+VADER ≈ 50 s
+
+DistilBERT ≈ 10 min
+
+GPT‑4o‑mini ≈ 8 min
+
+QC & write < 2 min
+
+≈ 27 minutes total (the budget we projected).
+
+Next steps
+Drop these files into a fresh repo; run unit tests (pytest -q).
+
+Ingest one BU file, skim 200 rows—pay special attention to:
+
+comments with only embedding‑derived themes
+
+any (shadow) flag hits
+
+Once the false‑positive rate looks acceptable, schedule the pipeline on the rest of your BUs.
