@@ -1,0 +1,235 @@
+{
+  "Manager Support": {
+    "keywords": ["manager", "supervisor", "coach", "sm", "dm", "mgr", "assistant manager"],
+    "subthemes": {
+      "Recognition": ["recognition", "promotion", "appreciation", "thank", "notice my effort"],
+      "Burnout": ["burnout", "overwork", "exhausted", "tired", "fatigue"],
+      "Favoritism": ["favoritism", "favorites", "unfair treatment"],
+      "Communication": ["communication", "informed", "updates", "kept in the loop"]
+    },
+    "negative_keywords": ["stock manager", "support beam"],
+    "examples": [
+      "My manager supports me.",
+      "I would like more recognition from my supervisor.",
+      "Favoritism from the assistant manager."
+    ],
+    "sources": ["internal", "reddit", "glassdoor"]
+  },
+  "Store Leadership": {
+    "keywords": ["leadership", "leader", "gm", "store lead", "store director"],
+    "subthemes": {
+      "Vision": ["vision", "direction", "strategy"],
+      "Engagement": ["leadership engagement", "open door", "approachable"],
+      "Accountability": ["accountable", "ownership", "responsible"]
+    },
+    "negative_keywords": [],
+    "examples": [
+      "Leadership does not provide enough vision.",
+      "The GM is approachable."
+    ],
+    "sources": ["internal", "reddit"]
+  },
+  "People & Teams": {
+    "keywords": ["team", "coworker", "collaboration", "unity", "peer", "teammate", "group"],
+    "subthemes": {
+      "Morale": ["morale", "team spirit", "motivation"],
+      "Conflict": ["conflict", "disagreement", "argument", "hostility"],
+      "Support": ["peer support", "teammate help", "teamwork"]
+    },
+    "negative_keywords": ["team lead" ],
+    "examples": [
+      "My team supports each other.",
+      "Morale is low among coworkers."
+    ],
+    "sources": ["internal"]
+  },
+  "Stocking & Instocks": {
+    "keywords": ["stock", "instock", "inventory", "dance floor", "plugging", "planogram", "go-back", "backstock", "plan-o", "out of stock", "stocking", "restock"],
+    "subthemes": {
+      "Process": ["stocking process", "planogram compliance"],
+      "Accuracy": ["count accuracy", "inventory mistake"],
+      "Supplies": ["supplies shortage", "broken pallets"]
+    },
+    "negative_keywords": ["stock options", "stock market"],
+    "examples": [
+      "The stocking process is broken.",
+      "We're always out of stock."
+    ],
+    "sources": ["internal"]
+  },
+  "Scheduling & Hours": {
+    "keywords": ["schedule", "hours", "shift", "bid line", "break coverage", "call in", "shift swap", "posted schedule"],
+    "subthemes": {
+      "Overtime": ["overtime", "extra hours", "over scheduled"],
+      "Flexibility": ["flexibility", "remote", "swap shift", "adjust my hours"],
+      "Understaffed": ["not enough hours", "short staffed"]
+    },
+    "negative_keywords": [],
+    "examples": [
+      "My schedule is inconsistent.",
+      "Too much overtime required."
+    ],
+    "sources": ["internal", "reddit"]
+  },
+  "Pay & Compensation": {
+    "keywords": ["pay", "wage", "salary", "bonus", "benefit", "cost of living", "raise", "paycheck"],
+    "subthemes": {
+      "Overtime Pay": ["overtime pay", "paid extra", "time and a half"],
+      "Raises": ["raise", "salary increase", "wage adjustment"],
+      "Benefits": ["health insurance", "401k", "retirement", "paid time off", "pto"]
+    },
+    "negative_keywords": ["pay attention", "wage war"],
+    "examples": [
+      "My pay isn't keeping up with inflation.",
+      "Raises are too small."
+    ],
+    "sources": ["internal", "glassdoor"]
+  },
+  "Training & Knowledge": {
+    "keywords": ["training", "onboarding", "academy", "knowledge", "learn", "development", "cross train", "e-learning"],
+    "subthemes": {
+      "Onboarding": ["onboarding", "academy", "orientation"],
+      "Continuous Training": ["ongoing training", "skills update", "new process"],
+      "Mentorship": ["mentor", "buddy system", "coaching"]
+    },
+    "negative_keywords": [],
+    "examples": [
+      "Training is lacking.",
+      "Onboarding was helpful."
+    ],
+    "sources": ["internal"]
+  },
+  "Physical Tools & Resources": {
+    "keywords": ["tool", "equipment", "device", "mule", "the wire", "action alley", "wet wall", "meat wall", "rf gun", "printer", "register"],
+    "subthemes": {
+      "Availability": ["not enough devices", "broken equipment"],
+      "Maintenance": ["repairs", "maintenance", "broken mule"]
+    },
+    "negative_keywords": [],
+    "examples": [
+      "Devices are often broken.",
+      "Not enough RF guns available."
+    ],
+    "sources": ["internal"]
+  },
+  "Safety & Well-being": {
+    "keywords": ["safety", "well-being", "health", "injury", "hazard", "unsafe", "accident", "incident", "heat exhaustion"],
+    "subthemes": {
+      "PPE": ["ppe", "mask", "safety gear"],
+      "Heat Safety": ["heat exhaustion", "no ac", "too hot", "heat protocol"],
+      "Injury": ["injury", "slip", "fall", "cut"]
+    },
+    "negative_keywords": [],
+    "examples": [
+      "Heat safety is ignored.",
+      "Lack of PPE available."
+    ],
+    "sources": ["reddit", "internal"]
+  },
+  "Customer Experience/Service": {
+    "keywords": ["customer", "service", "checkout", "basket", "scan", "guest", "shopper"],
+    "subthemes": {
+      "Line Wait": ["long lines", "slow checkout"],
+      "Courtesy": ["courteous", "helpful", "friendly"],
+      "Complaint Handling": ["customer complaint", "unhappy shopper"]
+    },
+    "negative_keywords": ["customer support software"],
+    "examples": [
+      "Long lines at checkout.",
+      "Customers are not treated well."
+    ],
+    "sources": ["internal", "reddit"]
+  },
+  "Staffing & Workload Pressure": {
+    "keywords": ["staffing", "understaffed", "workload", "pressure", "rush", "short staffed", "coverage"],
+    "subthemes": {
+      "Burnout": ["burnout", "overworked", "exhausted"],
+      "Task Overload": ["too much to do", "unrealistic expectations"],
+      "Coverage": ["not enough staff", "shift coverage"]
+    },
+    "negative_keywords": [],
+    "examples": [
+      "Understaffed every day.",
+      "Too much pressure to get tasks done."
+    ],
+    "sources": ["internal"]
+  },
+  "Accessibility & Accommodations": {
+    "keywords": ["accessibility", "ada", "disability", "accommodation", "maternity leave", "mobility", "wheelchair"],
+    "subthemes": {
+      "Medical Accommodation": ["medical accommodation", "stool", "hearing impaired", "vision impaired", "assistive device"],
+      "Leave": ["fmla", "sedgwick", "family leave", "paternity leave", "parental leave", "unpaid leave"]
+    },
+    "negative_keywords": [],
+    "examples": [
+      "ADA not respected.",
+      "Leave process is unclear."
+    ],
+    "sources": ["internal", "reddit"]
+  },
+  "Union & Advocacy": {
+    "keywords": ["unionize", "collective bargaining", "strike", "ufcw", "labor board", "organize a union", "union representation", "join a union", "right to work"],
+    "subthemes": {
+      "Union Drive": ["union drive", "union campaign"],
+      "Advocacy": ["advocacy", "organizing"]
+    },
+    "negative_keywords": [],
+    "examples": [
+      "People talking about unionizing.",
+      "UFCW flyers in breakroom."
+    ],
+    "sources": ["reddit", "news"]
+  },
+  "DEI & Inclusion": {
+    "keywords": ["diversity", "equity", "inclusion", "lgbtq", "bias", "discrimination", "inclusive", "gender identity", "race", "affirmative action", "pronouns", "equal opportunity"],
+    "subthemes": {
+      "Bias": ["bias", "favoritism", "prejudice", "microaggression"],
+      "Representation": ["representation", "minorities", "women in leadership"]
+    },
+    "negative_keywords": [],
+    "examples": [
+      "Bias in promotions.",
+      "More inclusion needed for LGBTQ associates."
+    ],
+    "sources": ["internal", "reddit"]
+  },
+  "Policy & Procedure": {
+    "keywords": ["policy", "procedure", "compliance", "5-strike", "no-call no-show", "rules", "protocol", "standard operating procedure"],
+    "subthemes": {
+      "Attendance Policy": ["attendance policy", "no-call no-show", "tardy"],
+      "Disciplinary": ["write up", "disciplinary", "termination"]
+    },
+    "negative_keywords": [],
+    "examples": [
+      "No-call no-show policy is unfair.",
+      "Procedures keep changing."
+    ],
+    "sources": ["internal"]
+  },
+  "Mental Health & Well-being": {
+    "keywords": ["mental health", "anxiety", "stress", "depression", "overwhelmed", "panic attack", "wellness", "employee assistance"],
+    "subthemes": {
+      "Support": ["mental health support", "eap", "employee assistance program"],
+      "Work-Life Balance": ["work-life balance", "burnout", "stress"]
+    },
+    "negative_keywords": [],
+    "examples": [
+      "Mental health is ignored.",
+      "Too much stress."
+    ],
+    "sources": ["reddit", "internal"]
+  },
+  "Violence & Safety Risk": {
+    "keywords": ["violence", "threat", "assault", "unsafe", "fighting", "physical altercation", "security concern", "active shooter", "emergency drill", "evacuation"],
+    "subthemes": {
+      "Prevention": ["violence prevention", "security training", "threat protocol"],
+      "Incident": ["incident report", "police called", "safety event"]
+    },
+    "negative_keywords": [],
+    "examples": [
+      "Active shooter drills in store.",
+      "Security concerns after altercation."
+    ],
+    "sources": ["news", "reddit"]
+  }
+}
