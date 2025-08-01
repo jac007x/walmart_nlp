@@ -2,14 +2,13 @@
 """
 End-to-end Walmart BU comment processing pipeline.
 Run:
-    python -m scripts.run_pipeline --csv data/comments_raw.csv
+    python -m scripts/run_pipeline --csv data/comments_raw.csv
 """
 import pandas as pd
 import numpy as np
 import yaml
 import json
 import hashlib
-import pickle
 import re
 import spacy
 import torch
@@ -17,27 +16,40 @@ from tqdm.auto import tqdm
 from sentence_transformers import SentenceTransformer, util
 from pathlib import Path
 from scripts.sentiment_ensemble import sentiment_dataframe
+from spacy.matcher import PhraseMatcher
 
 tqdm.pandas()
 CFG = yaml.safe_load(open("config.yaml"))
 
 # ----------------------------------------------------------------------- #
-# 1. Load dictionaries + matcher
+# 1. Load dictionaries
 theme_dict = json.load(open(CFG["paths"]["theme_dict_core"]))
 flag_core  = json.load(open(CFG["paths"]["flag_dict_core"]))
 flag_ext   = json.load(open(CFG["paths"]["flag_dict_ext"]))
 
-phrase_matcher, regex_catalogue = pickle.load(
-    open(CFG["paths"]["matcher_cache"], "rb")
-)
-
+# ----------------------------------------------------------------------- #
+# 2. Initialize spaCy and rebuild matcher in this Vocab
 nlp = spacy.load("en_core_web_sm", disable=["ner"])
+phrase_matcher = PhraseMatcher(nlp.vocab, attr="LOWER")
+regex_catalogue = []
+
+for theme, cfg in theme_dict.items():
+    # exact phrase keywords
+    for kw in cfg.get("keywords", []):
+        if isinstance(kw, dict) and "__regex__" in kw:
+            regex_catalogue.append((theme, re.compile(kw["__regex__"], re.I)))
+        else:
+            phrase_matcher.add(theme, [nlp.make_doc(kw)])
+
+    # any extra regex patterns you defined
+    for pattern in cfg.get("regex_patterns", []):
+        regex_catalogue.append((theme, re.compile(pattern, re.I)))
 
 def negated(tok):
     return any(c.dep_ == "neg" for c in tok.children) or tok.head.dep_ == "neg"
 
 # ----------------------------------------------------------------------- #
-# 2. Flag matching
+# 3. Flag matching
 def match_flags(txt, shadow=False):
     lc = txt.lower()
     res = []
@@ -54,7 +66,7 @@ def match_flags(txt, shadow=False):
     return res
 
 # ----------------------------------------------------------------------- #
-# 3. Rule-based theme matching
+# 4. Rule-based theme matching
 def match_themes(txt):
     doc = nlp(txt)
     lc  = txt.lower()
@@ -86,7 +98,7 @@ def match_themes(txt):
     return hits
 
 # ----------------------------------------------------------------------- #
-# 4. Embedding-assisted fallback (optional)
+# 5. Embedding-assisted fallback (optional)
 theme_vecs = {}
 if CFG.get("embedding_fallback", {}).get("enabled", False):
     embed_model = SentenceTransformer(CFG["embedding_fallback"]["model"])
@@ -107,7 +119,7 @@ def embed_fallback(txt, need):
     return [list(theme_vecs.keys())[i] for i in idxs]
 
 # ----------------------------------------------------------------------- #
-# 5. Pipeline entrypoint
+# 6. Pipeline entrypoint
 def run(csv_path):
     df = pd.read_csv(csv_path, low_memory=False)
     df["CleanComment"] = df["Comment"].fillna("").str.strip()
