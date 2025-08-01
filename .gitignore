@@ -1,0 +1,21 @@
+# Python artefacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+.venv
+
+# Data & models
+data/
+models/*.pkl
+*.parquet
+*.csv
+
+# Logs & checkpoints
+*.log
+step*.parquet
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
