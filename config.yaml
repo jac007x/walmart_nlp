@@ -8,7 +8,7 @@ paths:
   theme_dict_core:   dicts/theme_dict_core.json
   theme_dict_patch:  dicts/theme_dict_patch.yaml
   flag_dict_core:    dicts/walmart_flag_dict.json
-  flag_dict_ext:     dicts/flag_dict_ext.json
+  flag_dict_ext:     dicts/walmart_flag_dict.json
   matcher_cache:     models/matcher_cache.pkl
 
 batch_sizes:
