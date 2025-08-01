@@ -1,4 +1,10 @@
+# config.yaml
+# ───────────
+# Edit ONLY the right‑hand side of the colons.
+# Do NOT use tabs — YAML needs spaces.
+
 paths:
+  # Location of dictionaries **inside the repo** (keep as‑is).
   theme_dict_core:   dicts/theme_dict_core.json
   theme_dict_patch:  dicts/theme_dict_patch.yaml
   flag_dict_core:    dicts/flag_dict_core.json
@@ -6,23 +12,24 @@ paths:
   matcher_cache:     models/matcher_cache.pkl
 
 batch_sizes:
-  transformer: 128
-  gpt: 150
+  # How many comments go through each model at once.
+  transformer: 128        # DistilBERT
+  gpt:         150        # GPT-4o-mini
 
 embedding_fallback:
-  enabled: true
-  model: all-MiniLM-L6-v2
-  threshold: 0.70      # cosine similarity
+  enabled: true           # set false if you don’t want the extra recall pass
+  model: all-MiniLM-L6-v2 # sentence‑transformers model name
+  threshold: 0.70         # cosine similarity; raise if too many FPs
 
 gpt:
   model: gpt-4o-mini
-  concurrency: 4
-  token_cap: 300_000
+  concurrency: 4          # how many async calls in parallel (Colab ≈4‑6 ok)
+  token_cap: 300000       # safety guardrail; >0.5 M tokens aborts
 
 logging:
-  file: pipeline.log
+  file: pipeline.log      # where run_pipeline.py writes INFO lines
 
 notifications:
-  slack_webhook_url: ""   # fill if you want Slack alerts
+  slack_webhook_url: ""   # paste Slack Incoming Webhook URL or leave empty
 
-drift_threshold: 0.20
+drift_threshold: 0.20     # % change that triggers “theme drift” alert
