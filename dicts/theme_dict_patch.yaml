@@ -1,0 +1,63 @@
+Scheduling & Hours:
+  subthemes:
+    AI‑Driven scheduling:
+      - ai schedule
+      - auto‑scheduler
+      - algorithm schedule
+  concepts_add:
+    - cut hours
+    - hours cut
+    - skeleton crew
+    - pp﻿to             # invisible zero‑width char removed on save
+    - protected pto
+    - no‑call no‑show
+    - key event date
+
+Online Orders & Delivery:
+  keywords:
+    - spark driver
+    - ogp
+    - curbside
+    - mfc
+  subthemes:
+    Spark workflow:
+      - shop and deliver
+      - zone saturate
+
+Physical Tools & Tech:
+  subthemes:
+    BYOD & Apps:
+      - me@walmart
+      - zebra
+      - tc70
+      - handheld down
+
+Safety & Well‑being:
+  subthemes:
+    Heat safety:
+      - heat exhaustion
+      - too hot
+      - no ac
+
+Violence & Security:
+  subthemes:
+    Incidents & Threats:
+      - weapon
+      - gun
+      - knife
+      - shooting
+
+Training & Development:
+  subthemes:
+    Onboarding quality:
+      - cbl
+      - ulearn
+      - abysmal training
+
+Pay & Compensation:
+  subthemes:
+    Wages & Living cost:
+      - act your wage
+      - myshare
+      - profit sharing
+      - $regex:\$?\d{2}(?:\.\d{2})?\s*(?:an?\s*)?(?:hr|hour)\b
