@@ -14,7 +14,7 @@ matcher = PhraseMatcher(nlp.vocab, attr="LOWER")
 regex_catalogue = []
 
 for theme, cfg in THEME.items():
-    for kw in cfg["keywords"]:
+    for kw in cfg.get("keywords", []):
         if isinstance(kw, dict) and "__regex__" in kw:
             regex_catalogue.append((theme, re.compile(kw["__regex__"], re.I)))
         else:
